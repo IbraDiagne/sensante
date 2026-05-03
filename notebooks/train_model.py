@@ -185,3 +185,83 @@ print(f"\nProbabilites par classe :")
 for classe, proba in zip(model_loaded.classes_, probas):
     bar = '#' * int(proba * 30)
     print(f"  {classe:12s} : {proba:.1%} {bar}")
+
+
+# Exercice 1 : Importance des features
+print("\n--- Importance des features ---")
+importances = model.feature_importances_
+for name, imp in sorted(zip(feature_cols, importances),
+                        key=lambda x: x[1], reverse=True):
+    bar = '#' * int(imp * 50)
+    print(f"  {name:20s} : {imp:.3f} {bar}")
+
+
+# Exercice 2 : Tester avec 3 patients fictifs
+print("\n--- Test avec 3 patients fictifs ---")
+
+patients_test = [
+    {
+        'nom': 'Patient 1 - Jeune sans symptomes',
+        'age': 20,
+        'sexe': 'M',
+        'temperature': 37.0,
+        'tension_sys': 120,
+        'toux': False,
+        'fatigue': False,
+        'maux_tete': False,
+        'frissons': False,
+        'nausee': False,
+        'region': 'Dakar'
+    },
+    {
+        'nom': 'Patient 2 - Adulte avec forte fievre',
+        'age': 35,
+        'sexe': 'F',
+        'temperature': 40.5,
+        'tension_sys': 95,
+        'toux': True,
+        'fatigue': True,
+        'maux_tete': True,
+        'frissons': True,
+        'nausee': True,
+        'region': 'Thiès'
+    },
+    {
+        'nom': 'Patient 3 - Personne agee avec toux',
+        'age': 68,
+        'sexe': 'M',
+        'temperature': 38.5,
+        'tension_sys': 150,
+        'toux': True,
+        'fatigue': True,
+        'maux_tete': False,
+        'frissons': False,
+        'nausee': False,
+        'region': 'Saint-Louis'
+    }
+]
+
+for patient in patients_test:
+    sexe_enc = le_sexe_loaded.transform([patient['sexe']])[0]
+    region_enc = le_region_loaded.transform([patient['region']])[0]
+
+    features = [
+        patient['age'],
+        sexe_enc,
+        patient['temperature'],
+        patient['tension_sys'],
+        int(patient['toux']),
+        int(patient['fatigue']),
+        int(patient['maux_tete']),
+        int(patient['frissons']),
+        int(patient['nausee']),
+        region_enc
+    ]
+
+    diagnostic = model_loaded.predict([features])[0]
+    probas = model_loaded.predict_proba([features])[0]
+    proba_max = probas.max()
+
+    print(f"\n{patient['nom']}")
+    print(f"  Diagnostic : {diagnostic}")
+    print(f"  Probabilite : {proba_max:.1%}")
