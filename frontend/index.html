@@ -112,7 +112,7 @@
 
   <script>
 	const API_URL = "http://localhost:8000";
-
+	const historique = [];
 async function diagnostiquer() {
   const patient = {
     age: parseInt(document.getElementById("age").value),
@@ -147,8 +147,14 @@ region: document.getElementById("region").value
     }
 
     const resultat = await response.json();
-    afficherResultat(resultat);
-
+	historique.unshift({
+  diagnostic: resultat.diagnostic,
+  probabilite: Math.round(resultat.probabilite * 100),
+  confiance: resultat.confiance
+});
+if (historique.length > 5) historique.pop();
+afficherResultat(resultat);
+afficherHistorique();
   } catch (error) {
     afficherErreur("Erreur de connexion : " + error.message);
   }
@@ -169,6 +175,12 @@ function afficherResultat(r) {
     typh:   { bg:"bg-yellow-100", text:"text-yellow-800", bar:"bg-yellow-500", badge:"bg-yellow-500" },
     sain:   { bg:"bg-green-100",  text:"text-green-800",  bar:"bg-green-500",  badge:"bg-green-500" }
   };
+const icones = {
+    paludisme: '🌡️',
+    grippe: '🤧',
+    typhoide: '⚠️',
+    sain: '✅'
+};
   const c = couleurs[r.diagnostic] || couleurs["sain"];
   const pct = Math.round(r.probabilite * 100);
 
@@ -177,7 +189,7 @@ function afficherResultat(r) {
       <h2 class="text-xl font-bold text-gray-800 mb-4">Resultat</h2>
       <div class="${c.bg} rounded-lg p-4 mb-4">
         <p class="text-sm text-gray-600">Diagnostic :</p>
-        <p class="text-2xl font-bold ${c.text} uppercase mt-1">${r.diagnostic}</p>
+	<p class="text-2xl font-bold ${c.text} uppercase mt-1">${icones[r.diagnostic] || '🩺'} ${r.diagnostic}</p>
       </div>
       <div class="mb-4">
         <div class="flex justify-between mb-1">
@@ -204,6 +216,38 @@ function afficherErreur(msg) {
       <p class="text-red-700 font-medium">${msg}</p>
       <p class="text-red-500 text-sm mt-2">Verifiez votre connexion et reessayez.</p>
     </div>`;
+}
+function afficherHistorique() {
+  let html = `<div class="bg-white rounded-xl shadow-md p-6 mt-6">
+    <h3 class="text-lg font-bold text-gray-800 mb-3">📋 Historique des consultations</h3>
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="text-left text-gray-500 border-b">
+          <th class="pb-2">#</th>
+          <th class="pb-2">Diagnostic</th>
+          <th class="pb-2">Probabilite</th>
+          <th class="pb-2">Confiance</th>
+        </tr>
+      </thead>
+      <tbody>`;
+  historique.forEach((c, i) => {
+    html += `<tr class="border-b last:border-0">
+      <td class="py-2 text-gray-400">${i + 1}</td>
+      <td class="py-2 font-medium uppercase">${c.diagnostic}</td>
+      <td class="py-2">${c.probabilite}%</td>
+      <td class="py-2">${c.confiance}</td>
+    </tr>`;
+  });
+  html += `</tbody></table></div>`;
+  
+  const main = document.querySelector("main .grid");
+  const existing = document.getElementById("historique-section");
+  if (existing) existing.remove();
+  const div = document.createElement("div");
+  div.id = "historique-section";
+  div.className = "col-span-1 md:col-span-2";
+  div.innerHTML = html;
+  main.appendChild(div);
 }
   </script>
 
